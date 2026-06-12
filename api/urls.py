@@ -1,0 +1,32 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('students/', views.get_students),
+    path('students/add/', views.add_student),
+    path('students/<int:pk>/', views.get_student),
+    path('students/<int:pk>/update/', views.update_student),
+    path('students/<int:pk>/delete/', views.delete_student),
+    path('register/', views.register),
+    path('registrations/', views.get_registrations),
+    path('check-holiday/', views.check_holiday),
+    path('login/', views.login),
+    path('makeups/', views.get_makeups),
+    path('makeups/add/', views.add_makeup),
+    path('makeups/<int:pk>/schedule/', views.schedule_makeup),
+    path('makeups/<int:pk>/complete/', views.complete_makeup),
+    path('invoices/', views.get_invoices),
+    path('invoices/add/', views.add_invoice),
+    path('invoices/<int:pk>/confirm/', views.confirm_invoice),
+    path('artworks/', views.get_artworks),
+    path('artworks/upload/', views.upload_artwork),
+    path('artworks/<int:pk>/notify/', views.notify_artwork),
+    path('students/<int:pk>/artworks/', views.get_student_artworks),
+    path('attendance/', views.get_attendance),
+    path('attendance/submit/', views.submit_attendance),
+    path('invoices/<int:pk>/delete/', views.delete_invoice),
+    path('artworks/<int:pk>/delete/', views.delete_artwork),
+    path('invoices/<int:pk>/send-email/', views.send_invoice_email),
+    path('artworks/<int:pk>/send-email/', views.send_artwork_email),
+    path('makeups/<int:pk>/contact/', views.contact_makeup),
+]
