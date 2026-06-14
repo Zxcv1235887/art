@@ -79,15 +79,12 @@ WSGI_APPLICATION = 'gallery_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'railway'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
-        'OPTIONS': {
-            'connect_timeout': 30,
-        },
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ZVeXFMnDYsNnElmKYiaHrLbwsFeniCiu'),
+        'HOST': os.environ.get('DB_HOST', 'thomas.proxy.rlwy.net'),
+        'PORT': os.environ.get('DB_PORT', '36718'),
     }
 }
 
