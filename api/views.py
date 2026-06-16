@@ -8,127 +8,6 @@ from django.template.loader import render_to_string
 @api_view(['GET'])
 def get_students(request):
     students = Student.objects.all()
-    data = [{'id': s.id, 'name': s.name, 'term': s.term, 'done': s.done} for s in students]
-    return Response(data)
-
-@api_view(['GET'])
-def get_student(request, pk):
-    try:
-        s = Student.objects.get(id=pk)
-        return Response({'id': s.id, 'name': s.name, 'term': s.term, 'done': s.done})
-    except Student.DoesNotExist:
-        return Response({'error': '找不到學生'}, status=404)
-
-@api_view(['POST'])
-def add_student(request):
-    s = Student.objects.create(
-        name=request.data['name'],
-        term=request.data['term'],
-        done=request.data.get('done', 0)
-    )
-    return Response({'id': s.id, 'name': s.name, 'term': s.term, 'done': s.done})
-
-@api_view(['PUT'])
-def update_student(request, pk):
-    try:
-        s = Student.objects.get(id=pk)
-        s.name = request.data.get('name', s.name)
-        s.term = request.data.get('term', s.term)
-        s.save()
-        return Response({'id': s.id, 'name': s.name, 'term': s.term, 'done': s.done})
-    except Student.DoesNotExist:
-        return Response({'error': '找不到學生'}, status=404)
-
-@api_view(['DELETE'])
-def delete_student(request, pk):
-    try:
-        s = Student.objects.get(id=pk)
-        s.delete()
-        return Response({'message': '已刪除'})
-    except Student.DoesNotExist:
-        return Response({'error': '找不到學生'}, status=404)
-
-@api_view(['POST'])
-def register(request):
-    data = request.data
-    r = Registration.objects.create(
-        student_name=data['student_name'],
-        birth_date=data['birth_date'],
-        phone=data['phone'],
-        email=data.get('email', ''),
-        address=data.get('address', ''),
-        parent_name=data['parent_name'],
-        parent_phone=data['parent_phone'],
-        parent_email=data.get('parent_email', ''),
-        course=data['course'],
-        day=data['day'],
-        time_slot=data['time_slot'],
-    )
-    return Response({'id': r.id, 'message': '報名成功'})
-
-@api_view(['GET'])
-def get_registrations(request):
-    regs = Registration.objects.all().order_by('-created_at')
-    data = [{
-        'id': r.id,
-        'student_name': r.student_name,
-        'course': r.get_course_display(),
-        'day': r.get_day_display(),
-        'time_slot': r.time_slot,
-        'parent_name': r.parent_name,
-        'parent_phone': r.parent_phone,
-        'created_at': r.created_at.strftime('%Y-%m-%d'),
-    } for r in regs]
-    return Response(data)
-
-def get_tw_holidays(year):
-    holidays = {
-        2026: [
-            date(2026, 1, 1),
-            date(2026, 2, 16),
-            date(2026, 2, 17),
-            date(2026, 2, 18),
-            date(2026, 2, 19),
-            date(2026, 2, 20),
-            date(2026, 4, 4),
-            date(2026, 4, 5),
-            date(2026, 5, 1),
-            date(2026, 5, 31),
-            date(2026, 9, 19),
-            date(2026, 10, 10),
-        ]
-    }
-    return holidays.get(year, [])
-
-def next_class_date(start_date):
-    holidays = get_tw_holidays(start_date.year)
-    next_date = start_date
-    while next_date in holidays:
-        next_date += timedelta(weeks=1)
-    return next_date
-
-@api_view(['GET'])
-def check_holiday(request):
-    date_str = request.GET.get('date')
-    if not date_str:
-        return Response({'error': '請提供日期'}, status=400)
-    try:
-        check_date = date.fromisoformat(date_str)
-        holidays = get_tw_holidays(check_date.year)
-        is_holiday = check_date in holidays
-        next_date = next_class_date(check_date) if is_holiday else check_date
-        return Response({
-            'date': date_str,
-            'is_holiday': is_holiday,
-            'next_class_date': next_date.isoformat(),
-            'message': f'遇到國定假日，上課日期延至 {next_date}' if is_holiday else '正常上課'
-        })
-    except ValueError:
-        return Response({'error': '日期格式錯誤'}, status=400)
-    
-@api_view(['GET'])
-def get_students(request):
-    students = Student.objects.all()
     data = [{
         'id': s.id,
         'name': s.name,
@@ -177,7 +56,16 @@ def update_student(request, pk):
         return Response({'id': s.id, 'name': s.name})
     except Student.DoesNotExist:
         return Response({'error': '找不到學生'}, status=404)
-    
+
+@api_view(['DELETE'])
+def delete_student(request, pk):
+    try:
+        s = Student.objects.get(id=pk)
+        s.delete()
+        return Response({'message': '已刪除'})
+    except Student.DoesNotExist:
+        return Response({'error': '找不到學生'}, status=404)
+
 @api_view(['POST'])
 def login(request):
     username = request.data.get('username')
@@ -196,6 +84,66 @@ def login(request):
         return Response(data)
     except User.DoesNotExist:
         return Response({'error': '帳號或密碼錯誤'}, status=401)
+
+def get_tw_holidays(year):
+    holidays = {
+        2026: [
+            date(2026, 1, 1),
+            date(2026, 2, 16),
+            date(2026, 2, 17),
+            date(2026, 2, 18),
+            date(2026, 2, 19),
+            date(2026, 2, 20),
+            date(2026, 4, 4),
+            date(2026, 4, 5),
+            date(2026, 5, 1),
+            date(2026, 5, 31),
+            date(2026, 9, 19),
+            date(2026, 10, 10),
+        ]
+    }
+    return holidays.get(year, [])
+
+def next_class_date(start_date):
+    holidays = get_tw_holidays(start_date.year)
+    next_date = start_date
+    while next_date in holidays:
+        next_date += timedelta(weeks=1)
+    return next_date
+
+@api_view(['GET'])
+def check_holiday(request):
+    date_str = request.GET.get('date')
+    if not date_str:
+        return Response({'error': '請提供日期'}, status=400)
+    try:
+        check_date = date.fromisoformat(date_str)
+        holidays = get_tw_holidays(check_date.year)
+        is_holiday = check_date in holidays
+        next_date = next_class_date(check_date) if is_holiday else check_date
+        return Response({
+            'date': date_str,
+            'is_holiday': is_holiday,
+            'next_class_date': next_date.isoformat(),
+            'message': f'遇到國定假日，上課日期延至 {next_date}' if is_holiday else '正常上課'
+        })
+    except ValueError:
+        return Response({'error': '日期格式錯誤'}, status=400)
+
+@api_view(['GET'])
+def get_registrations(request):
+    regs = Registration.objects.all().order_by('-created_at')
+    data = [{
+        'id': r.id,
+        'student_name': r.student_name,
+        'course': r.get_course_display(),
+        'day': r.get_day_display(),
+        'time_slot': r.time_slot,
+        'parent_name': r.parent_name,
+        'parent_phone': r.parent_phone,
+        'created_at': r.created_at.strftime('%Y-%m-%d'),
+    } for r in regs]
+    return Response(data)
 
 @api_view(['GET'])
 def get_makeups(request):
@@ -303,8 +251,6 @@ def add_invoice(request):
     except Student.DoesNotExist:
         return Response({'error': '找不到學生'}, status=404)
 
-from .models import Student, Registration, User, Makeup, Invoice, Artwork
-
 @api_view(['GET'])
 def get_artworks(request):
     artworks = Artwork.objects.all().order_by('-uploaded_at')
@@ -372,7 +318,7 @@ def submit_attendance(request):
         try:
             student = Student.objects.get(id=student_id)
 
-            Attendance.objects.update_or_create(
+            attendance, att_created = Attendance.objects.update_or_create(
                 student=student,
                 date=date,
                 defaults={
@@ -381,40 +327,41 @@ def submit_attendance(request):
                 }
             )
 
-            if status == 'present':
+            if status == 'present' and att_created:
                 student.done += 1
                 student.save()
                 if student.done == 11:
-                    discount = False
                     Invoice.objects.create(
                         student=student,
                         term=student.term,
                         sent_date=date,
-                        discount=discount,
+                        discount=False,
                         final_amount=3600,
                         status='pending'
                     )
 
             elif status == 'absent':
-                student.done += 1
-                student.save()
-                Makeup.objects.create(
+                makeup, created = Makeup.objects.get_or_create(
                     student=student,
                     absent_date=date,
                     class_number=class_number,
-                    status='pending'
+                    defaults={'status': 'pending'}
                 )
-                if student.parent_email:
-                    try:
-                        send_mail(
-                            f'【繪苑藝廊】{student.name} 請假通知及補課安排',
-                            f'親愛的家長您好，\n\n{student.name} 同學於 {date} 請假，我們將盡快安排補課時間。\n\n請假日期：{date}\n第幾堂：第 {class_number} 堂\n\n我們會盡快與您聯繫確認補課時間，請保持電話暢通。\n\n繪苑藝廊 敬上',
-                            None,
-                            [student.parent_email],
-                            fail_silently=True,
-                        )
-                    except:
-                        pass
+
+                if created:
+                    student.done += 1
+                    student.save()
+                    if student.parent_email:
+                        try:
+                            send_mail(
+                                f'【藝廊】{student.name} 請假通知及補課安排',
+                                f'親愛的家長您好，\n\n{student.name} 同學於 {date} 請假，我們將盡快安排補課時間。\n\n請假日期：{date}\n第幾堂：第 {class_number} 堂\n\n我們會盡快與您聯繫確認補課時間，請保持電話暢通。\n\n藝廊 敬上',
+                                None,
+                                [student.parent_email],
+                                fail_silently=True,
+                            )
+                        except:
+                            pass
 
         except Student.DoesNotExist:
             pass
@@ -428,7 +375,7 @@ def get_attendance(request):
         records = Attendance.objects.filter(date=date)
     else:
         records = Attendance.objects.all().order_by('-date')
-    
+
     data = [{
         'id': r.id,
         'student_id': r.student.id,
@@ -623,7 +570,6 @@ def register(request):
     parent_email = data.get('parent_email', '')
     if parent_email:
         username = parent_email.split('@')[0]
-        # 確保帳號不重複
         base_username = username
         counter = 1
         while User.objects.filter(username=username).exists():
@@ -641,7 +587,6 @@ def register(request):
             student=student,
         )
 
-        # 寄送帳號資訊給家長
         send_mail(
             '【藝廊】報名成功・您的登入帳號',
             f"""
