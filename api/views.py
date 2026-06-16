@@ -591,3 +591,76 @@ def contact_makeup(request, pk):
         return Response({'error': '找不到補課記錄'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def register(request):
+    data = request.data
+    r = Registration.objects.create(
+        student_name=data['student_name'],
+        birth_date=data['birth_date'],
+        phone=data['phone'],
+        email=data.get('email', ''),
+        address=data.get('address', ''),
+        parent_name=data['parent_name'],
+        parent_phone=data['parent_phone'],
+        parent_email=data.get('parent_email', ''),
+        course=data['course'],
+        day=data['day'],
+        time_slot=data['time_slot'],
+    )
+
+    # 自動建立學生資料
+    student = Student.objects.create(
+        name=data['student_name'],
+        student_class='thu',
+        term=1,
+        done=0,
+        parent_email=data.get('parent_email', ''),
+    )
+
+    # 自動建立家長帳號
+    parent_email = data.get('parent_email', '')
+    if parent_email:
+        username = parent_email.split('@')[0]
+        # 確保帳號不重複
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        import random
+        import string
+        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        User.objects.create(
+            username=username,
+            password=password,
+            role='parent',
+            student=student,
+        )
+
+        # 寄送帳號資訊給家長
+        send_mail(
+            '【藝廊】報名成功・您的登入帳號',
+            f"""
+親愛的 {data['parent_name']} 家長您好，
+
+感謝您為 {data['student_name']} 報名藝廊課程！
+
+您的家長登入帳號已建立：
+帳號：{username}
+密碼：{password}
+
+請至以下網址登入查看孩子的學習進度：
+https://chipper-caramel-a3961b.netlify.app/gallery-system/login.html
+
+藝廊 敬上
+            """,
+            None,
+            [parent_email],
+            fail_silently=True,
+        )
+
+    return Response({'id': r.id, 'message': '報名成功'})
